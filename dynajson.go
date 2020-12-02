@@ -126,7 +126,10 @@ func NewByPath(path string) (*JSONElement, error) {
 		if err != nil {
 			return nil, fmt.Errorf("http.DefaultClient.Do: %s: %w", path, err)
 		}
-		defer resp.Body.Close()
+		defer func() {
+			io.Copy(ioutil.Discard, resp.Body)
+			resp.Body.Close()
+		}()
 
 		if resp.StatusCode != http.StatusOK {
 			return nil, fmt.Errorf("StatusCode != 200: %s: %d", path, resp.StatusCode)
