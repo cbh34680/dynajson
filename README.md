@@ -87,7 +87,7 @@ func readSample2() error {
 
     json.Unmarshal(bytes, &orig)
 
-    root = dynajson.New(orig)
+    root, _ = dynajson.NewByBytes(bytes)
     fmt.Println(root) // `{"str": "abc", "arr": [10, "a", 10.1], "map": {"int": 100}}`
 
     return nil
