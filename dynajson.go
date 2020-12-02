@@ -115,6 +115,7 @@ func NewByPath(path string) (*JSONElement, error) {
 	if strings.HasPrefix(path, "http://") || strings.HasPrefix(path, "https://") {
 
 		// https://golang.hateblo.jp/entry/golang-http-request
+		// https://qiita.com/ono_matope/items/60e96c01b43c64ed1d18
 
 		req, err := http.NewRequest(http.MethodGet, path, nil)
 		if err != nil {
@@ -125,6 +126,7 @@ func NewByPath(path string) (*JSONElement, error) {
 		if err != nil {
 			return nil, fmt.Errorf("http.DefaultClient.Do: %s: %w", path, err)
 		}
+		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
 			return nil, fmt.Errorf("StatusCode != 200: %s: %d", path, resp.StatusCode)
