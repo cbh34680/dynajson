@@ -79,7 +79,7 @@ func readSample2() error {
     orig["map"] = mapObj
 
     root := dynajson.New(orig)
-    fmt.Println(root)
+    fmt.Println(root) // `{"str": "abc", "arr": [10, "a", 10.1], "map": {"int": 100}}`
 
     //
     bytes, _ := json.Marshal(orig)
