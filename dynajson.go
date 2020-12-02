@@ -116,6 +116,7 @@ func NewByPath(path string) (*JSONElement, error) {
 
 		// https://golang.hateblo.jp/entry/golang-http-request
 		// https://qiita.com/ono_matope/items/60e96c01b43c64ed1d18
+		// https://qiita.com/stk0724/items/dc400dccd29a4b3d6471
 
 		req, err := http.NewRequest(http.MethodGet, path, nil)
 		if err != nil {
