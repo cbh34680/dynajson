@@ -66,10 +66,33 @@ func writeSample() error {
     return nil
 }
 
+func readSample2() error {
+
+    orig := map[string]interface{}{}
+    orig["str"] = "abc"
+
+    arrObj := []interface{}{10, "a", 10.1}
+    orig["arr"] = arrObj
+
+    mapObj := map[string]interface{}{}
+    mapObj["int"] = 100
+    orig["map"] = mapObj
+
+    root := dynajson.New(orig)
+    fmt.Println(root)
+
+    //
+    bytes, _ := json.Marshal(orig)
+    fmt.Println(string(bytes))
+
+    return nil
+}
+
 func main() {
 
     readSample()
     writeSample()
+    readSample2()
 }
 
 
