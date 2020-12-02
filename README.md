@@ -24,6 +24,7 @@ import (
 )
 
 func readSample() error {
+
     url := "https://petstore.swagger.io/v2/swagger.json"
     root, err := dynajson.NewByPath(url)
     if err != nil {
