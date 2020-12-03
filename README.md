@@ -19,8 +19,11 @@ go get github.com/cbh34680/dynajson
 package main
 
 import (
-    "fmt"
-    "github.com/cbh34680/dynajson"
+	"encoding/json"
+	"fmt"
+	"reflect"
+
+	"github.com/cbh34680/dynajson"
 )
 
 func readSample() error {
@@ -30,16 +33,16 @@ func readSample() error {
     if err != nil {
         return fmt.Errorf("NewByPath: %s: %w", url, err)
     }
-    
+
     fmt.Println(root.Select("swagger").AsString())
-    
+
     info := root.Select("info")
     fmt.Println(info.Select("title").AsString())
-    
+
     root.Select("definitions").EachMap(func(key string, elm *dynajson.JSONElement) {
         fmt.Printf("%s %s\n", key, elm.Select("type"))
     })
-    
+
     return nil
 }
 
@@ -68,29 +71,36 @@ func writeSample() error {
 
 func readSample2() error {
 
-    orig := map[string]interface{}{}
-    orig["str"] = "abc"
+	orig := map[string]interface{}{}
+	orig["str"] = "abc"
 
-    arrObj := []interface{}{10, "a", 10.1}
-    orig["arr"] = arrObj
+	arrObj := []interface{}{10, "a", 10.1}
+	orig["arr"] = arrObj
 
-    mapObj := map[string]interface{}{}
-    mapObj["int"] = 100
-    orig["map"] = mapObj
+	mapObj := map[string]interface{}{}
+	mapObj["int"] = 100
+	orig["map"] = mapObj
 
-    root := dynajson.New(orig)
-    fmt.Println(root) // `{"str": "abc", "arr": [10, "a", 10.1], "map": {"int": 100}}`
+	root := dynajson.New(orig)
+	fmt.Println(root) // `{"str": "abc", "arr": [10, "a", 10.1], "map": {"int": 100}}`
 
-    //
-    bytes, _ := json.Marshal(orig)
-    fmt.Println(string(bytes))
+	//
+	bytes, _ := json.Marshal(orig)
+	fmt.Println(string(bytes))
 
-    json.Unmarshal(bytes, &orig)
+	json.Unmarshal(bytes, &orig)
 
-    root, _ = dynajson.NewByBytes(bytes)
-    fmt.Println(root) // `{"str": "abc", "arr": [10, "a", 10.1], "map": {"int": 100}}`
+	root, _ = dynajson.NewByBytes(bytes)
+	fmt.Println(root) // `{"str": "abc", "arr": [10, "a", 10.1], "map": {"int": 100}}`
 
-    return nil
+	//
+	root2, _ := dynajson.NewByString(`{"str": "abc", "arr": [10, "a", 10.1], "map": {"int": 100}}`)
+	root3, _ := dynajson.NewByString(`{"str": "abc", "arr": [10, "a", 10.1], "map": {"int": 999999999}}`)
+
+	fmt.Printf("%t\n", reflect.DeepEqual(root.Raw(), root2.Raw()))
+	fmt.Printf("%t\n", reflect.DeepEqual(root.Raw(), root3.Raw()))
+
+	return nil
 }
 
 func main() {

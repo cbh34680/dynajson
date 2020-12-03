@@ -11,11 +11,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestAll(t *testing.T) {
+	TestWrite1(t)
+	TestRead1(t)
+	TestRead2(t)
+}
+
 func TestWrite1(t *testing.T) {
 
 	assert := assert.New(t)
 
-	root := NewRootAsMap()
+	root := NewAsMap()
 	root.WarnHandler = func(me *JSONElement, message string, where string, line int) {
 		fmt.Fprintf(os.Stderr, "Warn(%d): %s(%d): %s\n", me.Level, where, line, message)
 	}
@@ -45,10 +51,18 @@ func TestWrite1(t *testing.T) {
 	m2 := root.Select("m2")
 	m2.Put("m2i1", 201)
 
+	sum := 0
+	root.Select("m1").Select("m1a1").EachArray(func(i int, elm *JSONElement) {
+		sum++
+	})
+
 	assert.Equal(4, root.Count())
 	assert.Equal(6, m1.Select("m1a1").Count())
+	assert.Equal(6, sum)
+	assert.Equal(6, len(root.Select("m1").Select("m1a1").AsArray()))
 	assert.Equal("str2", m2.Select("m2s1").AsString())
 	assert.Equal(3, m1.Select("m1a1").Select(2).AsInt())
+	assert.Equal(1, root.Select("m2").Select("m2i1").Count()) // warn OK
 
 	fmt.Println(root.String())
 }

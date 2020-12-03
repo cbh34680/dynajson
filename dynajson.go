@@ -79,13 +79,13 @@ func New(obj interface{}) *JSONElement {
 	}
 }
 
-// NewRootAsMap ... func
-func NewRootAsMap() *JSONElement {
+// NewAsMap ... func
+func NewAsMap() *JSONElement {
 	return New(map[string]interface{}{})
 }
 
-// NewRootAsArray ... func
-func NewRootAsArray() *JSONElement {
+// NewAsArray ... func
+func NewAsArray() *JSONElement {
 	return New(&[]interface{}{})
 }
 
@@ -357,19 +357,13 @@ func (me *JSONElement) Count() int {
 		return 0
 	}
 
-	mapObj, ok := me.rawObject.(map[string]interface{})
-	if ok {
-		return len(mapObj)
-	}
-
-	arrObj, ok := me.rawObject.([]interface{})
-	if ok {
-		return len(arrObj)
-	}
-
-	arrPtrObj, ok := me.rawObject.(*[]interface{})
-	if ok {
-		return len(*arrPtrObj)
+	switch v := me.rawObject.(type) {
+	case map[string]interface{}:
+		return len(v)
+	case []interface{}:
+		return len(v)
+	case *[]interface{}:
+		return len(*v)
 	}
 
 	me.Warn("Count: Not Container: %T", me.rawObject)
@@ -401,16 +395,16 @@ func (me *JSONElement) SelectByPos(pos int) *JSONElement {
 		return me.child(nil)
 	}
 
-	typedObj, ok := me.rawObject.([]interface{})
-	if !ok {
-		ptrObj, ok := me.rawObject.(*[]interface{})
-		if !ok {
-			me.Warn("SelectByPos(%d): Not Array: %T", pos, me.rawObject)
+	var typedObj []interface{}
 
-			return me.child(nil)
-		}
-
-		typedObj = *ptrObj
+	switch v := me.rawObject.(type) {
+	case []interface{}:
+		typedObj = v
+	case *[]interface{}:
+		typedObj = *v
+	default:
+		me.Warn("SelectByPos(%d): Not Array: %T", pos, me.rawObject)
+		return me.child(nil)
 	}
 
 	containerLen := len(typedObj)
@@ -513,15 +507,15 @@ func (me *JSONElement) EachArray(callback func(int, *JSONElement)) {
 		return
 	}
 
-	typedObj, ok := me.rawObject.([]interface{})
-	if !ok {
-		ptrObj, ok := me.rawObject.(*[]interface{})
-		if !ok {
-			me.Warn("EachArray: Cast: %T", me.rawObject)
-			return
-		}
-
-		typedObj = *ptrObj
+	var typedObj []interface{}
+	switch v := me.rawObject.(type) {
+	case []interface{}:
+		typedObj = v
+	case *[]interface{}:
+		typedObj = *v
+	default:
+		me.Warn("EachArray: Cast: %T", me.rawObject)
+		return
 	}
 
 	for i, v := range typedObj {
@@ -539,19 +533,18 @@ func (me *JSONElement) AsArray() []*JSONElement {
 		return []*JSONElement{}
 	}
 
-	typedObj, ok := me.rawObject.([]interface{})
-	if !ok {
-		ptrObj, ok := me.rawObject.(*[]interface{})
-		if !ok {
-			me.Warn("AsArray: Cast: %T", me.rawObject)
-			return []*JSONElement{}
-		}
-
-		typedObj = *ptrObj
+	var typedObj []interface{}
+	switch v := me.rawObject.(type) {
+	case []interface{}:
+		typedObj = v
+	case *[]interface{}:
+		typedObj = *v
+	default:
+		me.Warn("AsArray: Cast: %T", me.rawObject)
+		return []*JSONElement{}
 	}
 
 	arr := make([]*JSONElement, len(typedObj))
-
 	for i, v := range typedObj {
 		arr[i] = me.child(v)
 	}
