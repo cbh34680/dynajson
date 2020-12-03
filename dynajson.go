@@ -84,9 +84,19 @@ func NewAsMap() *JSONElement {
 	return New(map[string]interface{}{})
 }
 
+// NewRootAsMap ... rename
+func NewRootAsMap() *JSONElement {
+	return NewAsMap()
+}
+
 // NewAsArray ... func
 func NewAsArray() *JSONElement {
 	return New(&[]interface{}{})
+}
+
+// NewRootAsArray ... rename
+func NewRootAsArray() *JSONElement {
+	return NewAsArray()
 }
 
 // NewByBytes ... func
