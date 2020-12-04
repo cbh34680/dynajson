@@ -28,45 +28,48 @@ import (
 
 func readSample() error {
 
-    url := "https://petstore.swagger.io/v2/swagger.json"
-    root, err := dynajson.NewByPath(url)
-    if err != nil {
-        return fmt.Errorf("NewByPath: %s: %w", url, err)
-    }
+	url := "https://petstore.swagger.io/v2/swagger.json"
+	root, err := dynajson.NewByPath(url)
+	if err != nil {
+		return fmt.Errorf("NewByPath: %s: %w", url, err)
+	}
 
-    fmt.Println(root.Select("swagger").AsString())
+	fmt.Println(root.Select("swagger").AsString())
 
-    info := root.Select("info")
-    fmt.Println(info.Select("title").AsString())
+	info := root.Select("info")
+	fmt.Println(info.Select("title").AsString())
 
-    root.Select("definitions").EachMap(func(key string, elm *dynajson.JSONElement) {
-        fmt.Printf("%s %s\n", key, elm.Select("type"))
-    })
+	root.Select("definitions").EachMap(func(key string, elm *dynajson.JSONElement) {
+		fmt.Printf("%s %s\n", key, elm.Select("type"))
+	})
 
-    return nil
+	return nil
 }
 
 func writeSample() error {
 
-    root := dynajson.NewRootAsMap()
+	root := dynajson.NewAsMap()
 
-    root.Put("str", "abc")
-    root.Put("arr", 10, "a", 10.1)
+	root.Put("str", "abc")
+	root.Put("arr", 10, "a", 10.1)
 
-    sub, err := root.PutEmptyMap("map")
-    if err != nil {
-        return fmt.Errorf("PutEmptyMap: %w", err)
-    }
+	sub, err := root.PutEmptyMap("map")
+	if err != nil {
+		return fmt.Errorf("PutEmptyMap: %w", err)
+	}
 
-    sub.Put("int", 100)
-    arr, _ := sub.PutEmptyArray("arr")
+	sub.Put("int", 100)
+	arr, _ := sub.PutEmptyArray("arr")
 
-    arr.Append(20)
-    arr.Append("b", 20.2)
+	arr.Append(20)
+	arr.Append("b", 20.2)
+	fmt.Println(arr.Count())
 
-    fmt.Println(root) // `{"str": "abc", "arr": [10, "a", 10.1], "map": {"int": 100, "arr": [20, "b", 20.2]}}`
+	fmt.Println(root) // `{"str": "abc", "arr": [10, "a", 10.1], "map": {"int": 100, "arr": [20, "b", 20.2]}}`
+	fmt.Println(root.Count())
+	fmt.Println(root.Select("str").Count())
 
-    return nil
+	return nil
 }
 
 func readSample2() error {
@@ -105,10 +108,9 @@ func readSample2() error {
 
 func main() {
 
-    readSample()
-    writeSample()
-    readSample2()
+	readSample()
+	writeSample()
+	readSample2()
 }
-
 
 ```
