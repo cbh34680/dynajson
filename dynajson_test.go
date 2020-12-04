@@ -149,3 +149,27 @@ func TestRead2(t *testing.T) {
 	assert.Equal(glossDiv.Select("title").AsString(), "S")
 	assert.Equal(seeAlso, seeAlso2)
 }
+
+func TestReadonly(t *testing.T) {
+
+	assert := assert.New(t)
+
+	root, err := NewByString(`{"str":"abc", "int": 123, "arr":["a", "b", 1, 2], "map":{"mapstr": "ABC", "mapint":455}}`)
+	assert.Nil(err)
+
+	assert.Equal("abc", root.Select("str").AsString())
+
+	err = root.Put("str2", "def")
+	assert.Nil(err)
+
+	root.Readonly = true
+	err = root.Put("str3", "DEF")
+	assert.NotNil(err)
+
+	err = root.Delete("int")
+	assert.NotNil(err)
+
+	sub := root.Select("map")
+	err = sub.Put("mapstr2", "DEF")
+	assert.NotNil(err)
+}

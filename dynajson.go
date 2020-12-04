@@ -67,6 +67,7 @@ type JSONElement struct {
 	rawObject   interface{}
 	WarnHandler func(*JSONElement, string, string, int)
 	Level       int
+	Readonly    bool
 }
 
 // ---------------------------------------------------------------------------
@@ -199,6 +200,10 @@ func (me *JSONElement) Put(key string, val1 interface{}, vals ...interface{}) er
 		return fmt.Errorf("key=[%s]: me.rawObject is null", key)
 	}
 
+	if me.Readonly {
+		return fmt.Errorf("key=[%s]: me.Readonly is true", key)
+	}
+
 	typedObj, ok := me.rawObject.(map[string]interface{})
 	if !ok {
 		return fmt.Errorf("key=[%s]: Not Map Type: %T", key, me.rawObject)
@@ -225,6 +230,10 @@ func (me *JSONElement) PutEmptyMap(key string) (*JSONElement, error) {
 		return nil, fmt.Errorf("key=[%s]: me.rawObject is null", key)
 	}
 
+	if me.Readonly {
+		return nil, fmt.Errorf("key=[%s]: me.Readonly is true", key)
+	}
+
 	err := me.Put(key, map[string]interface{}{})
 	if err != nil {
 		return nil, fmt.Errorf("key=[%s]: %w", key, err)
@@ -240,6 +249,10 @@ func (me *JSONElement) PutEmptyArray(key string) (*JSONElement, error) {
 		return nil, fmt.Errorf("key=[%s]: me.rawObject is null", key)
 	}
 
+	if me.Readonly {
+		return nil, fmt.Errorf("key=[%s]: me.Readonly is true", key)
+	}
+
 	err := me.Put(key, &[]interface{}{})
 	if err != nil {
 		return nil, fmt.Errorf("key=[%s]: Put: %w", key, err)
@@ -253,6 +266,10 @@ func (me *JSONElement) Append(val1 interface{}, vals ...interface{}) error {
 
 	if me.rawObject == nil {
 		return fmt.Errorf("me.rawObject is null")
+	}
+
+	if me.Readonly {
+		return fmt.Errorf("me.Readonly is true")
 	}
 
 	typedObj, ok := me.rawObject.(*[]interface{})
@@ -274,6 +291,10 @@ func (me *JSONElement) DeleteByKey(key string) error {
 
 	if me.rawObject == nil {
 		return fmt.Errorf("key=[%s]: me.rawObject is null", key)
+	}
+
+	if me.Readonly {
+		return fmt.Errorf("key=[%s]: me.Readonly is true", key)
 	}
 
 	typedObj, ok := me.rawObject.(map[string]interface{})
@@ -303,9 +324,13 @@ func (me *JSONElement) DeleteByPos(pos int) error {
 		return fmt.Errorf("me.rawObject is null")
 	}
 
+	if me.Readonly {
+		return fmt.Errorf("pos=[%d]: me.Readonly is true", pos)
+	}
+
 	typedObj, ok := me.rawObject.(*[]interface{})
 	if !ok {
-		return fmt.Errorf("Not Editable-Array Type: %T", me.rawObject)
+		return fmt.Errorf("pos=[%d]: Not Editable-Array Type: %T", pos, me.rawObject)
 	}
 
 	containerLen := len(*typedObj)
@@ -345,6 +370,7 @@ func (me *JSONElement) child(obj interface{}) *JSONElement {
 		rawObject:   obj,
 		WarnHandler: me.WarnHandler,
 		Level:       me.Level + 1,
+		Readonly:    me.Readonly,
 	}
 }
 
