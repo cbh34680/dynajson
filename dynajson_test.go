@@ -157,6 +157,10 @@ func TestReadonly(t *testing.T) {
 	root, err := NewByString(`{"str":"abc", "int": 123, "arr":["a", "b", 1, 2], "map":{"mapstr": "ABC", "mapint":455}}`)
 	assert.Nil(err)
 
+	root.WarnHandler = func(me *JSONElement, message string, where string, line int) {
+		fmt.Fprintf(os.Stderr, "Warn(%d): %s(%d): %s\n", me.Level, where, line, message)
+	}
+
 	assert.Equal("abc", root.Select("str").AsString())
 
 	err = root.Put("str2", "def")
