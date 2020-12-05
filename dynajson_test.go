@@ -176,4 +176,31 @@ func TestReadonly(t *testing.T) {
 	sub := root.Select("map")
 	err = sub.Put("mapstr2", "DEF")
 	assert.NotNil(err)
+
+}
+
+func TestReadonly2(t *testing.T) {
+
+	assert := assert.New(t)
+
+	root, err := NewByString(`{"str":"abc", "int": 123, "arr":["a", "b", 1, 2], "map":{"mapstr": "ABC", "mapint":455}}`)
+	assert.Nil(err)
+
+	root.WarnHandler = func(me *JSONElement, message string, where string, line int) {
+		fmt.Fprintf(os.Stderr, "Warn(%d): %s(%d): %s\n", me.Level, where, line, message)
+	}
+
+	root.FatalHandler = func(me *JSONElement, message string, where string, line int) {
+		fmt.Fprintf(os.Stderr, "Fatal(%d): %s(%d): %s\n", me.Level, where, line, message)
+	}
+
+	root.Readonly = true
+	fmt.Println(root)
+
+	err = root.Put("fail", 123) // WARN OK
+	assert.NotNil(err)
+
+	root.Select("not found").AsString() // WARN OK
+
+	assert.True(root.Select("not found").IsNil())
 }

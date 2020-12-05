@@ -64,10 +64,11 @@ func Dump(d *interface{}, buf *bytes.Buffer) {
 
 // JSONElement ... struct
 type JSONElement struct {
-	rawObject   interface{}
-	WarnHandler func(*JSONElement, string, string, int)
-	Level       int
-	Readonly    bool
+	rawObject    interface{}
+	WarnHandler  func(*JSONElement, string, string, int)
+	FatalHandler func(*JSONElement, string, string, int)
+	Level        int
+	Readonly     bool
 }
 
 // ---------------------------------------------------------------------------
@@ -181,11 +182,24 @@ func (me *JSONElement) Warn(format string, a ...interface{}) {
 	me.WarnHandler(me, fmt.Sprintf(format, a...), where, line)
 }
 
+// Fatal ... func
+func (me *JSONElement) Fatal(format string, a ...interface{}) {
+
+	if me.FatalHandler == nil {
+		me.Warn(format, a...)
+		return
+	}
+
+	_, where, line, _ := runtime.Caller(2)
+
+	me.FatalHandler(me, fmt.Sprintf(format, a...), where, line)
+}
+
 // Errorf ... func
 func (me *JSONElement) Errorf(format string, a ...interface{}) error {
 
 	err := fmt.Errorf(format, a...)
-	me.Warn(err.Error())
+	me.Fatal(err.Error())
 
 	return err
 }
@@ -200,12 +214,18 @@ func (me *JSONElement) Raw() interface{} {
 	return me.rawObject
 }
 
+// IsNil ... func
+func (me *JSONElement) IsNil() bool {
+
+	return me.Raw() == nil
+}
+
 // ---------------------------------------------------------------------------
 
 // Put ... func
 func (me *JSONElement) Put(key string, val1 interface{}, vals ...interface{}) error {
 
-	if me.rawObject == nil {
+	if me.IsNil() {
 		return me.Errorf("key=[%s]: me.rawObject is null", key)
 	}
 
@@ -235,7 +255,7 @@ func (me *JSONElement) Put(key string, val1 interface{}, vals ...interface{}) er
 // PutEmptyMap ... func
 func (me *JSONElement) PutEmptyMap(key string) (*JSONElement, error) {
 
-	if me.rawObject == nil {
+	if me.IsNil() {
 		return nil, me.Errorf("key=[%s]: me.rawObject is null", key)
 	}
 
@@ -254,7 +274,7 @@ func (me *JSONElement) PutEmptyMap(key string) (*JSONElement, error) {
 // PutEmptyArray ... func
 func (me *JSONElement) PutEmptyArray(key string) (*JSONElement, error) {
 
-	if me.rawObject == nil {
+	if me.IsNil() {
 		return nil, me.Errorf("key=[%s]: me.rawObject is null", key)
 	}
 
@@ -273,7 +293,7 @@ func (me *JSONElement) PutEmptyArray(key string) (*JSONElement, error) {
 // Append ... func
 func (me *JSONElement) Append(val1 interface{}, vals ...interface{}) error {
 
-	if me.rawObject == nil {
+	if me.IsNil() {
 		return me.Errorf("me.rawObject is null")
 	}
 
@@ -298,7 +318,7 @@ func (me *JSONElement) Append(val1 interface{}, vals ...interface{}) error {
 // DeleteByKey ... func
 func (me *JSONElement) DeleteByKey(key string) error {
 
-	if me.rawObject == nil {
+	if me.IsNil() {
 		return me.Errorf("key=[%s]: me.rawObject is null", key)
 	}
 
@@ -329,7 +349,7 @@ func remove(slice []interface{}, s int) []interface{} {
 // DeleteByPos ... func
 func (me *JSONElement) DeleteByPos(pos int) error {
 
-	if me.rawObject == nil {
+	if me.IsNil() {
 		return me.Errorf("me.rawObject is null")
 	}
 
@@ -357,7 +377,7 @@ func (me *JSONElement) DeleteByPos(pos int) error {
 // Delete ... func
 func (me *JSONElement) Delete(arg interface{}) error {
 
-	if me.rawObject == nil {
+	if me.IsNil() {
 		return me.Errorf("me.rawObject is null")
 	}
 
@@ -397,7 +417,7 @@ func (me *JSONElement) String() string {
 // Count ... func
 func (me *JSONElement) Count() int {
 
-	if me.rawObject == nil {
+	if me.IsNil() {
 		me.Warn("Count: Null Object")
 		return 0
 	}
@@ -418,7 +438,7 @@ func (me *JSONElement) Count() int {
 // SelectByKey ... func
 func (me *JSONElement) SelectByKey(key string) *JSONElement {
 
-	if me.rawObject == nil {
+	if me.IsNil() {
 		me.Warn("SelectByKey(%s): Null Object", key)
 		return me.child(nil)
 	}
@@ -435,7 +455,7 @@ func (me *JSONElement) SelectByKey(key string) *JSONElement {
 // SelectByPos ... func
 func (me *JSONElement) SelectByPos(pos int) *JSONElement {
 
-	if me.rawObject == nil {
+	if me.IsNil() {
 		me.Warn("SelectByPos(%d): Null Object", pos)
 		return me.child(nil)
 	}
@@ -466,7 +486,7 @@ func (me *JSONElement) SelectByPos(pos int) *JSONElement {
 // Select ... func
 func (me *JSONElement) Select(arg interface{}) *JSONElement {
 
-	if me.rawObject == nil {
+	if me.IsNil() {
 		me.Warn("Select(%v): Null Object", arg)
 		return me.child(nil)
 	}
@@ -487,7 +507,7 @@ func (me *JSONElement) Select(arg interface{}) *JSONElement {
 // Keys ... func
 func (me *JSONElement) Keys() []string {
 
-	if me.rawObject == nil {
+	if me.IsNil() {
 		me.Warn("Keys: Null Object")
 		return []string{}
 	}
@@ -512,7 +532,7 @@ func (me *JSONElement) Keys() []string {
 // EachMap ... func
 func (me *JSONElement) EachMap(callback func(string, *JSONElement)) {
 
-	if me.rawObject == nil {
+	if me.IsNil() {
 		me.Warn("EachMap: Null Object")
 		return
 	}
@@ -547,7 +567,7 @@ func (me *JSONElement) EachMap(callback func(string, *JSONElement)) {
 // EachArray ... func
 func (me *JSONElement) EachArray(callback func(int, *JSONElement)) {
 
-	if me.rawObject == nil {
+	if me.IsNil() {
 		me.Warn("EachArray: Null Object")
 		return
 	}
@@ -573,7 +593,7 @@ func (me *JSONElement) EachArray(callback func(int, *JSONElement)) {
 // AsArray ... func
 func (me *JSONElement) AsArray() []*JSONElement {
 
-	if me.rawObject == nil {
+	if me.IsNil() {
 		me.Warn("AsArray: Null Object")
 		return []*JSONElement{}
 	}
@@ -600,7 +620,7 @@ func (me *JSONElement) AsArray() []*JSONElement {
 // AsString ... func
 func (me *JSONElement) AsString() string {
 
-	if me.rawObject == nil {
+	if me.IsNil() {
 		me.Warn("AsString: Null Object")
 		return ""
 	}
@@ -617,7 +637,7 @@ func (me *JSONElement) AsString() string {
 // AsBool ... func
 func (me *JSONElement) AsBool() bool {
 
-	if me.rawObject == nil {
+	if me.IsNil() {
 		me.Warn("AsBool: Null Object")
 		return false
 	}
@@ -634,7 +654,7 @@ func (me *JSONElement) AsBool() bool {
 // AsInt ... func
 func (me *JSONElement) AsInt() int {
 
-	if me.rawObject == nil {
+	if me.IsNil() {
 		me.Warn("AsInt: Null Object")
 		return 0
 	}
@@ -656,7 +676,7 @@ func (me *JSONElement) AsInt() int {
 // AsFloat ... func
 func (me *JSONElement) AsFloat() float64 {
 
-	if me.rawObject == nil {
+	if me.IsNil() {
 		me.Warn("AsFloat: Null Object")
 		return 0.0
 	}
