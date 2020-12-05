@@ -211,5 +211,8 @@ func TestReadonly2(t *testing.T) {
 
 	fmt.Println(root.Select(strings.Split("map1/map2", "/"), "map3", "map3str").AsString())
 
-	root.Select([]string{})
+	root.Walk(func(parents []interface{}, key, val interface{}) {
+
+		fmt.Printf("%v %v %v\n", parents, key, val)
+	})
 }

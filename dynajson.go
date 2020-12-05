@@ -64,7 +64,7 @@ func Dump(d *interface{}, buf *bytes.Buffer) {
 
 // JSONElement ... struct
 type JSONElement struct {
-	rawObject    interface{}
+	raw          interface{}
 	WarnHandler  func(*JSONElement, string, string, int)
 	FatalHandler func(*JSONElement, string, string, int)
 	Level        int
@@ -77,7 +77,7 @@ type JSONElement struct {
 func New(obj interface{}) *JSONElement {
 
 	return &JSONElement{
-		rawObject: obj,
+		raw: obj,
 	}
 }
 
@@ -211,7 +211,7 @@ func (me *JSONElement) Raw() interface{} {
 		return nil
 	}
 
-	return me.rawObject
+	return me.raw
 }
 
 // IsNil ... func
@@ -226,16 +226,16 @@ func (me *JSONElement) IsNil() bool {
 func (me *JSONElement) Put(key string, val1 interface{}, vals ...interface{}) error {
 
 	if me.IsNil() {
-		return me.Errorf("key=[%s]: me.rawObject is null", key)
+		return me.Errorf("key=[%s]: me.raw is null", key)
 	}
 
 	if me.Readonly {
 		return me.Errorf("key=[%s]: me.Readonly is true", key)
 	}
 
-	typedObj, ok := me.rawObject.(map[string]interface{})
+	typedObj, ok := me.raw.(map[string]interface{})
 	if !ok {
-		return me.Errorf("key=[%s]: Not Map Type: %T", key, me.rawObject)
+		return me.Errorf("key=[%s]: Not Map Type: %T", key, me.raw)
 	}
 
 	switch len(vals) {
@@ -256,7 +256,7 @@ func (me *JSONElement) Put(key string, val1 interface{}, vals ...interface{}) er
 func (me *JSONElement) PutEmptyMap(key string) (*JSONElement, error) {
 
 	if me.IsNil() {
-		return nil, me.Errorf("key=[%s]: me.rawObject is null", key)
+		return nil, me.Errorf("key=[%s]: me.raw is null", key)
 	}
 
 	if me.Readonly {
@@ -275,7 +275,7 @@ func (me *JSONElement) PutEmptyMap(key string) (*JSONElement, error) {
 func (me *JSONElement) PutEmptyArray(key string) (*JSONElement, error) {
 
 	if me.IsNil() {
-		return nil, me.Errorf("key=[%s]: me.rawObject is null", key)
+		return nil, me.Errorf("key=[%s]: me.raw is null", key)
 	}
 
 	if me.Readonly {
@@ -294,16 +294,16 @@ func (me *JSONElement) PutEmptyArray(key string) (*JSONElement, error) {
 func (me *JSONElement) Append(val1 interface{}, vals ...interface{}) error {
 
 	if me.IsNil() {
-		return me.Errorf("me.rawObject is null")
+		return me.Errorf("me.raw is null")
 	}
 
 	if me.Readonly {
 		return me.Errorf("me.Readonly is true")
 	}
 
-	typedObj, ok := me.rawObject.(*[]interface{})
+	typedObj, ok := me.raw.(*[]interface{})
 	if !ok {
-		return me.Errorf("Not Editable-Array Type: %T", me.rawObject)
+		return me.Errorf("Not Editable-Array Type: %T", me.raw)
 	}
 
 	(*typedObj) = append((*typedObj), val1)
@@ -319,16 +319,16 @@ func (me *JSONElement) Append(val1 interface{}, vals ...interface{}) error {
 func (me *JSONElement) DeleteByKey(key string) error {
 
 	if me.IsNil() {
-		return me.Errorf("key=[%s]: me.rawObject is null", key)
+		return me.Errorf("key=[%s]: me.raw is null", key)
 	}
 
 	if me.Readonly {
 		return me.Errorf("key=[%s]: me.Readonly is true", key)
 	}
 
-	typedObj, ok := me.rawObject.(map[string]interface{})
+	typedObj, ok := me.raw.(map[string]interface{})
 	if !ok {
-		return me.Errorf("key=[%s]: Not Map Type: %T", key, me.rawObject)
+		return me.Errorf("key=[%s]: Not Map Type: %T", key, me.raw)
 	}
 
 	if _, ok := typedObj[key]; !ok {
@@ -350,16 +350,16 @@ func remove(slice []interface{}, s int) []interface{} {
 func (me *JSONElement) DeleteByPos(pos int) error {
 
 	if me.IsNil() {
-		return me.Errorf("me.rawObject is null")
+		return me.Errorf("pos=[%d]: me.raw is null", pos)
 	}
 
 	if me.Readonly {
 		return me.Errorf("pos=[%d]: me.Readonly is true", pos)
 	}
 
-	typedObj, ok := me.rawObject.(*[]interface{})
+	typedObj, ok := me.raw.(*[]interface{})
 	if !ok {
-		return me.Errorf("pos=[%d]: Not Editable-Array Type: %T", pos, me.rawObject)
+		return me.Errorf("pos=[%d]: Not Editable-Array Type: %T", pos, me.raw)
 	}
 
 	containerLen := len(*typedObj)
@@ -378,7 +378,7 @@ func (me *JSONElement) DeleteByPos(pos int) error {
 func (me *JSONElement) Delete(arg interface{}) error {
 
 	if me.IsNil() {
-		return me.Errorf("me.rawObject is null")
+		return me.Errorf("me.raw is null")
 	}
 
 	switch v := arg.(type) {
@@ -396,7 +396,7 @@ func (me *JSONElement) Delete(arg interface{}) error {
 func (me *JSONElement) child(obj interface{}) *JSONElement {
 
 	return &JSONElement{
-		rawObject:   obj,
+		raw:         obj,
 		WarnHandler: me.WarnHandler,
 		Level:       me.Level + 1,
 		Readonly:    me.Readonly,
@@ -407,8 +407,8 @@ func (me *JSONElement) String() string {
 
 	buf := &bytes.Buffer{}
 
-	if me.rawObject != nil {
-		Dump(&me.rawObject, buf)
+	if me.raw != nil {
+		Dump(&me.raw, buf)
 	}
 
 	return buf.String()
@@ -422,7 +422,7 @@ func (me *JSONElement) Count() int {
 		return 0
 	}
 
-	switch v := me.rawObject.(type) {
+	switch v := me.raw.(type) {
 	case map[string]interface{}:
 		return len(v)
 	case []interface{}:
@@ -431,7 +431,7 @@ func (me *JSONElement) Count() int {
 		return len(*v)
 	}
 
-	me.Warn("Count: Not Container: %T", me.rawObject)
+	me.Warn("Count: Not Container: %T", me.raw)
 	return 1
 }
 
@@ -439,13 +439,13 @@ func (me *JSONElement) Count() int {
 func (me *JSONElement) SelectByKey(key string) *JSONElement {
 
 	if me.IsNil() {
-		me.Warn("SelectByKey(%s): Null Object", key)
+		me.Warn("key=[%s]: SelectByKey: Null Object", key)
 		return me.child(nil)
 	}
 
-	typedObj, ok := me.rawObject.(map[string]interface{})
+	typedObj, ok := me.raw.(map[string]interface{})
 	if !ok {
-		me.Warn("SelectByKey(%s): Cast: %T", key, me.rawObject)
+		me.Warn("key=[%s]: SelectByKey: Cast: %T", key, me.raw)
 		return me.child(nil)
 	}
 
@@ -456,26 +456,26 @@ func (me *JSONElement) SelectByKey(key string) *JSONElement {
 func (me *JSONElement) SelectByPos(pos int) *JSONElement {
 
 	if me.IsNil() {
-		me.Warn("SelectByPos(%d): Null Object", pos)
+		me.Warn("pos=[%d]: SelectByPos: Null Object", pos)
 		return me.child(nil)
 	}
 
 	var typedObj []interface{}
 
-	switch v := me.rawObject.(type) {
+	switch v := me.raw.(type) {
 	case []interface{}:
 		typedObj = v
 	case *[]interface{}:
 		typedObj = *v
 	default:
-		me.Warn("SelectByPos(%d): Not Array: %T", pos, me.rawObject)
+		me.Warn("pos=[%d]: SelectByPos: Not Array: %T", pos, me.raw)
 		return me.child(nil)
 	}
 
 	containerLen := len(typedObj)
 
 	if pos >= containerLen {
-		me.Warn("SelectByPos(%d): Overflow: %d", pos, containerLen)
+		me.Warn("pos=[%d]: SelectByPos: Overflow: %d", pos, containerLen)
 
 		return me.child(nil)
 	}
@@ -487,7 +487,7 @@ func (me *JSONElement) SelectByPos(pos int) *JSONElement {
 func (me *JSONElement) Select(key1 interface{}, keys ...interface{}) *JSONElement {
 
 	if me.IsNil() {
-		me.Warn("Select(%v): Null Object", key1)
+		me.Warn("Select: Null Object")
 		return me.child(nil)
 	}
 
@@ -496,7 +496,7 @@ func (me *JSONElement) Select(key1 interface{}, keys ...interface{}) *JSONElemen
 		newArgsLen := len(strArr) + len(keys)
 		if newArgsLen == 0 {
 
-			me.Warn("No key")
+			me.Warn("Select: No key")
 			return me.child(nil)
 		}
 
@@ -545,9 +545,9 @@ func (me *JSONElement) Keys() []string {
 		return []string{}
 	}
 
-	typedObj, ok := me.rawObject.(map[string]interface{})
+	typedObj, ok := me.raw.(map[string]interface{})
 	if !ok {
-		me.Warn("Keys: Cast: %T", me.rawObject)
+		me.Warn("Keys: Cast: %T", me.raw)
 		return []string{}
 	}
 
@@ -570,9 +570,9 @@ func (me *JSONElement) EachMap(callback func(string, *JSONElement)) {
 		return
 	}
 
-	typedObj, ok := me.rawObject.(map[string]interface{})
+	typedObj, ok := me.raw.(map[string]interface{})
 	if !ok {
-		me.Warn("EachMap: Cast: %T", me.rawObject)
+		me.Warn("EachMap: Cast: %T", me.raw)
 		return
 	}
 
@@ -606,18 +606,56 @@ func (me *JSONElement) EachArray(callback func(int, *JSONElement)) {
 	}
 
 	var typedObj []interface{}
-	switch v := me.rawObject.(type) {
+	switch v := me.raw.(type) {
 	case []interface{}:
 		typedObj = v
 	case *[]interface{}:
 		typedObj = *v
 	default:
-		me.Warn("EachArray: Cast: %T", me.rawObject)
+		me.Warn("EachArray: Cast: %T", me.raw)
 		return
 	}
 
 	for i, v := range typedObj {
 		callback(i, me.child(v))
+	}
+}
+
+type walkCallbackType func([]interface{}, interface{}, interface{})
+
+// Walk ... func
+func (me *JSONElement) Walk(callback walkCallbackType) {
+
+	walk([]interface{}{}, me.raw, callback)
+}
+
+func walk(argParents []interface{}, argVal interface{}, callback walkCallbackType) {
+
+	var arrObj []interface{}
+	var mapObj map[string]interface{}
+
+	switch v := argVal.(type) {
+	case []interface{}:
+		arrObj = v
+	case *[]interface{}:
+		arrObj = *v
+	case map[string]interface{}:
+		mapObj = v
+	}
+
+	if arrObj != nil {
+
+		for k, v := range arrObj {
+			callback(argParents, k, v)
+			walk(append(argParents, k), v, callback)
+		}
+	}
+
+	if mapObj != nil {
+		for k, v := range mapObj {
+			callback(argParents, k, v)
+			walk(append(argParents, k), v, callback)
+		}
 	}
 }
 
@@ -632,13 +670,14 @@ func (me *JSONElement) AsArray() []*JSONElement {
 	}
 
 	var typedObj []interface{}
-	switch v := me.rawObject.(type) {
+
+	switch v := me.raw.(type) {
 	case []interface{}:
 		typedObj = v
 	case *[]interface{}:
 		typedObj = *v
 	default:
-		me.Warn("AsArray: Cast: %T", me.rawObject)
+		me.Warn("AsArray: Cast: %T", me.raw)
 		return []*JSONElement{}
 	}
 
@@ -658,9 +697,9 @@ func (me *JSONElement) AsString() string {
 		return ""
 	}
 
-	typedObj, ok := me.rawObject.(string)
+	typedObj, ok := me.raw.(string)
 	if !ok {
-		me.Warn("AsString: Cast: %T", me.rawObject)
+		me.Warn("AsString: Cast: %T", me.raw)
 		return ""
 	}
 
@@ -675,9 +714,9 @@ func (me *JSONElement) AsBool() bool {
 		return false
 	}
 
-	typedObj, ok := me.rawObject.(bool)
+	typedObj, ok := me.raw.(bool)
 	if !ok {
-		me.Warn("AsBool: Cast: %T", me.rawObject)
+		me.Warn("AsBool: Cast: %T", me.raw)
 		return false
 	}
 
@@ -694,13 +733,13 @@ func (me *JSONElement) AsInt() int {
 
 	var rv int
 
-	switch v := me.rawObject.(type) {
+	switch v := me.raw.(type) {
 	case int:
 		rv = v
 	case float64:
 		rv = int(v)
 	default:
-		me.Warn("AsInt: Cast: %T", me.rawObject)
+		me.Warn("AsInt: Cast: %T", me.raw)
 	}
 
 	return rv
@@ -716,13 +755,13 @@ func (me *JSONElement) AsFloat() float64 {
 
 	var rv float64
 
-	switch v := me.rawObject.(type) {
+	switch v := me.raw.(type) {
 	case int:
 		rv = float64(v)
 	case float64:
 		rv = v
 	default:
-		me.Warn("AsInt: Cast: %T", me.rawObject)
+		me.Warn("AsInt: Cast: %T", me.raw)
 	}
 
 	return rv
