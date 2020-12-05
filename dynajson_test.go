@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -207,4 +208,8 @@ func TestReadonly2(t *testing.T) {
 	assert.True(root.Select("not found").IsNil())
 
 	fmt.Println(root.Select("map1", "map2", "map3", "map3arr", 2, 2, "map4", 1).AsInt())
+
+	fmt.Println(root.Select(strings.Split("map1/map2", "/"), "map3", "map3str").AsString())
+
+	root.Select([]string{})
 }

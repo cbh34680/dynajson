@@ -491,6 +491,31 @@ func (me *JSONElement) Select(key1 interface{}, keys ...interface{}) *JSONElemen
 		return me.child(nil)
 	}
 
+	if strArr, ok := key1.([]string); ok {
+
+		newArgsLen := len(strArr) + len(keys)
+		if newArgsLen == 0 {
+
+			me.Warn("No key")
+			return me.child(nil)
+		}
+
+		newArgs := make([]interface{}, newArgsLen)
+
+		i := 0
+		for _, z := range strArr {
+			newArgs[i] = z
+			i++
+		}
+		for _, z := range keys {
+			newArgs[i] = z
+			i++
+		}
+
+		key1 = newArgs[0]
+		keys = newArgs[1:]
+	}
+
 	var next *JSONElement
 
 	switch x := key1.(type) {
