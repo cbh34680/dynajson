@@ -621,15 +621,15 @@ func (me *JSONElement) EachArray(callback func(int, *JSONElement)) {
 	}
 }
 
-type walkCallbackType func([]interface{}, interface{}, interface{})
+type walkCallbackType func([]interface{}, interface{}, interface{}) error
 
 // Walk ... func
-func (me *JSONElement) Walk(callback walkCallbackType) {
+func (me *JSONElement) Walk(callback walkCallbackType) error {
 
-	walk([]interface{}{}, me.raw, callback)
+	return walk([]interface{}{}, me.raw, callback)
 }
 
-func walk(argParents []interface{}, argVal interface{}, callback walkCallbackType) {
+func walk(argParents []interface{}, argVal interface{}, callback walkCallbackType) error {
 
 	var arrObj []interface{}
 	var mapObj map[string]interface{}
@@ -646,17 +646,33 @@ func walk(argParents []interface{}, argVal interface{}, callback walkCallbackTyp
 	if arrObj != nil {
 
 		for k, v := range arrObj {
-			callback(argParents, k, v)
-			walk(append(argParents, k), v, callback)
+			err := callback(argParents, k, v)
+			if err != nil {
+				return fmt.Errorf("%v: callback: %w", k, err)
+			}
+
+			err = walk(append(argParents, k), v, callback)
+			if err != nil {
+				return fmt.Errorf("%v: walk: %w", k, err)
+			}
 		}
 	}
 
 	if mapObj != nil {
 		for k, v := range mapObj {
-			callback(argParents, k, v)
-			walk(append(argParents, k), v, callback)
+			err := callback(argParents, k, v)
+			if err != nil {
+				return fmt.Errorf("%v: callback: %w", k, err)
+			}
+
+			err = walk(append(argParents, k), v, callback)
+			if err != nil {
+				return fmt.Errorf("%v: walk: %w", k, err)
+			}
 		}
 	}
+
+	return nil
 }
 
 // ---------------------------------------------------------------------------

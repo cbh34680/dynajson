@@ -211,8 +211,22 @@ func TestReadonly2(t *testing.T) {
 
 	fmt.Println(root.Select(strings.Split("map1/map2", "/"), "map3", "map3str").AsString())
 
-	root.Walk(func(parents []interface{}, key, val interface{}) {
+	cnt := 0
+
+	err = root.Walk(func(parents []interface{}, key, val interface{}) error {
+
+		if cnt > 3 {
+			return fmt.Errorf("count > 3")
+		}
 
 		fmt.Printf("%v %v %v\n", parents, key, val)
+
+		cnt++
+
+		return nil
 	})
+
+	if err != nil {
+		fmt.Println(err)
+	}
 }
