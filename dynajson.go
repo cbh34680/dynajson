@@ -484,22 +484,30 @@ func (me *JSONElement) SelectByPos(pos int) *JSONElement {
 }
 
 // Select ... func
-func (me *JSONElement) Select(arg interface{}) *JSONElement {
+func (me *JSONElement) Select(key1 interface{}, keys ...interface{}) *JSONElement {
 
 	if me.IsNil() {
-		me.Warn("Select(%v): Null Object", arg)
+		me.Warn("Select(%v): Null Object", key1)
 		return me.child(nil)
 	}
 
-	switch v := arg.(type) {
+	var next *JSONElement
+
+	switch x := key1.(type) {
 	case int:
-		return me.SelectByPos(v)
+		next = me.SelectByPos(x)
 	case string:
-		return me.SelectByKey(v)
+		next = me.SelectByKey(x)
+	default:
+		me.Warn("Select(%v): Cast: %[1]T", key1)
+		return me.child(nil)
 	}
 
-	me.Warn("Select(%v): Cast: %[1]T", arg)
-	return me.child(nil)
+	if len(keys) == 0 {
+		return next
+	}
+
+	return next.Select(keys[0], keys[1:]...)
 }
 
 // ---------------------------------------------------------------------------

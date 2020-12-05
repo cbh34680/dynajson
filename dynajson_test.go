@@ -15,6 +15,8 @@ func TestAll(t *testing.T) {
 	TestWrite1(t)
 	TestRead1(t)
 	TestRead2(t)
+	TestReadonly1(t)
+	TestReadonly2(t)
 }
 
 func TestWrite1(t *testing.T) {
@@ -150,7 +152,7 @@ func TestRead2(t *testing.T) {
 	assert.Equal(seeAlso, seeAlso2)
 }
 
-func TestReadonly(t *testing.T) {
+func TestReadonly1(t *testing.T) {
 
 	assert := assert.New(t)
 
@@ -183,7 +185,7 @@ func TestReadonly2(t *testing.T) {
 
 	assert := assert.New(t)
 
-	root, err := NewByString(`{"str":"abc", "int": 123, "arr":["a", "b", 1, 2], "map":{"mapstr": "ABC", "mapint":455}}`)
+	root, err := NewByString(`{"str":"abc", "int": 123, "arr":["a", "b", 1, 2], "map1":{"map1str": "ABC", "map1int":455, "map2":{"map3":{"map3str":"DEF", "map3arr":[100, 200, [201, 202, {"map4":[10101, 10102]}], 300]}}}}`)
 	assert.Nil(err)
 
 	root.WarnHandler = func(me *JSONElement, message string, where string, line int) {
@@ -203,4 +205,6 @@ func TestReadonly2(t *testing.T) {
 	root.Select("not found").AsString() // WARN OK
 
 	assert.True(root.Select("not found").IsNil())
+
+	fmt.Println(root.Select("map1", "map2", "map3", "map3arr", 2, 2, "map4", 1).AsInt())
 }
