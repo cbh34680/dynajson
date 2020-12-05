@@ -170,14 +170,14 @@ func TestReadonly1(t *testing.T) {
 	assert.Nil(err)
 
 	root.Readonly = true
-	err = root.Put("str3", "DEF")
+	err = root.Put("str3", "DEF") // WARN OK
 	assert.NotNil(err)
 
-	err = root.Delete("int")
+	err = root.Delete("int") // WARN OK
 	assert.NotNil(err)
 
 	sub := root.Select("map")
-	err = sub.Put("mapstr2", "DEF")
+	err = sub.Put("mapstr2", "DEF") // WARN OK
 	assert.NotNil(err)
 
 }

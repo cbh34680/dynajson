@@ -185,12 +185,17 @@ func (me *JSONElement) Warn(format string, a ...interface{}) {
 // Fatal ... func
 func (me *JSONElement) Fatal(format string, a ...interface{}) {
 
+	_, where, line, _ := runtime.Caller(3)
+
 	if me.FatalHandler == nil {
-		me.Warn(format, a...)
+
+		if me.WarnHandler == nil {
+			return
+		}
+
+		me.WarnHandler(me, fmt.Sprintf(format, a...), where, line)
 		return
 	}
-
-	_, where, line, _ := runtime.Caller(2)
 
 	me.FatalHandler(me, fmt.Sprintf(format, a...), where, line)
 }
@@ -244,9 +249,10 @@ func (me *JSONElement) Put(key string, val1 interface{}, vals ...interface{}) er
 		typedObj[key] = val1
 	default:
 		// 複数の時は "key": [val, val, ...]
-		arr := []interface{}{val1}
-		arr = append(arr, vals...)
-		typedObj[key] = &arr
+		refArr := &[]interface{}{val1}
+		*refArr = append(*refArr, vals...)
+
+		typedObj[key] = refArr
 	}
 
 	return nil
@@ -301,15 +307,15 @@ func (me *JSONElement) Append(val1 interface{}, vals ...interface{}) error {
 		return me.Errorf("me.Readonly is true")
 	}
 
-	typedObj, ok := me.raw.(*[]interface{})
+	refArr, ok := me.raw.(*[]interface{})
 	if !ok {
 		return me.Errorf("Not Editable-Array Type: %T", me.raw)
 	}
 
-	(*typedObj) = append((*typedObj), val1)
+	(*refArr) = append((*refArr), val1)
 
 	if len(vals) != 0 {
-		(*typedObj) = append((*typedObj), vals...)
+		(*refArr) = append((*refArr), vals...)
 	}
 
 	return nil
@@ -357,19 +363,19 @@ func (me *JSONElement) DeleteByPos(pos int) error {
 		return me.Errorf("pos=[%d]: me.Readonly is true", pos)
 	}
 
-	typedObj, ok := me.raw.(*[]interface{})
+	refArr, ok := me.raw.(*[]interface{})
 	if !ok {
 		return me.Errorf("pos=[%d]: Not Editable-Array Type: %T", pos, me.raw)
 	}
 
-	containerLen := len(*typedObj)
+	containerLen := len(*refArr)
 
 	if pos >= containerLen {
 		me.Warn("DeleteByPos(%d): Overflow: Container(%d)", pos, containerLen)
 		return nil
 	}
 
-	(*typedObj) = remove(*typedObj, pos)
+	(*refArr) = remove(*refArr, pos)
 
 	return nil
 }
@@ -393,10 +399,10 @@ func (me *JSONElement) Delete(arg interface{}) error {
 
 // ---------------------------------------------------------------------------
 
-func (me *JSONElement) child(obj interface{}) *JSONElement {
+func (me *JSONElement) child(raw interface{}) *JSONElement {
 
 	return &JSONElement{
-		raw:         obj,
+		raw:         raw,
 		WarnHandler: me.WarnHandler,
 		Level:       me.Level + 1,
 		Readonly:    me.Readonly,
@@ -460,19 +466,19 @@ func (me *JSONElement) SelectByPos(pos int) *JSONElement {
 		return me.child(nil)
 	}
 
-	var typedObj []interface{}
+	var refArr *[]interface{}
 
 	switch v := me.raw.(type) {
 	case []interface{}:
-		typedObj = v
+		refArr = &v
 	case *[]interface{}:
-		typedObj = *v
+		refArr = v
 	default:
 		me.Warn("pos=[%d]: SelectByPos: Not Array: %T", pos, me.raw)
 		return me.child(nil)
 	}
 
-	containerLen := len(typedObj)
+	containerLen := len(*refArr)
 
 	if pos >= containerLen {
 		me.Warn("pos=[%d]: SelectByPos: Overflow: %d", pos, containerLen)
@@ -480,7 +486,7 @@ func (me *JSONElement) SelectByPos(pos int) *JSONElement {
 		return me.child(nil)
 	}
 
-	return me.child(typedObj[pos])
+	return me.child((*refArr)[pos])
 }
 
 // Select ... func
@@ -605,47 +611,42 @@ func (me *JSONElement) EachArray(callback func(int, *JSONElement)) {
 		return
 	}
 
-	var typedObj []interface{}
+	var refArr *[]interface{}
+
 	switch v := me.raw.(type) {
 	case []interface{}:
-		typedObj = v
+		refArr = &v
 	case *[]interface{}:
-		typedObj = *v
+		refArr = v
 	default:
 		me.Warn("EachArray: Cast: %T", me.raw)
 		return
 	}
 
-	for i, v := range typedObj {
+	for i, v := range *refArr {
 		callback(i, me.child(v))
 	}
 }
 
 type walkCallbackType func([]interface{}, interface{}, interface{}) error
 
-// Walk ... func
-func (me *JSONElement) Walk(callback walkCallbackType) error {
-
-	return walk([]interface{}{}, me.raw, callback)
-}
-
 func walk(argParents []interface{}, argVal interface{}, callback walkCallbackType) error {
 
-	var arrObj []interface{}
-	var mapObj map[string]interface{}
+	var refArr *[]interface{}
+	var objMap map[string]interface{}
 
 	switch v := argVal.(type) {
 	case []interface{}:
-		arrObj = v
+		refArr = &v
 	case *[]interface{}:
-		arrObj = *v
+		refArr = v
 	case map[string]interface{}:
-		mapObj = v
+		objMap = v
 	}
 
-	if arrObj != nil {
+	if refArr != nil {
 
-		for k, v := range arrObj {
+		for k, v := range *refArr {
 			err := callback(argParents, k, v)
 			if err != nil {
 				return fmt.Errorf("%v: callback: %w", k, err)
@@ -658,8 +659,8 @@ func walk(argParents []interface{}, argVal interface{}, callback walkCallbackTyp
 		}
 	}
 
-	if mapObj != nil {
-		for k, v := range mapObj {
+	if objMap != nil {
+		for k, v := range objMap {
 			err := callback(argParents, k, v)
 			if err != nil {
 				return fmt.Errorf("%v: callback: %w", k, err)
@@ -675,6 +676,12 @@ func walk(argParents []interface{}, argVal interface{}, callback walkCallbackTyp
 	return nil
 }
 
+// Walk ... func
+func (me *JSONElement) Walk(callback walkCallbackType) error {
+
+	return walk([]interface{}{}, me.raw, callback)
+}
+
 // ---------------------------------------------------------------------------
 
 // AsArray ... func
@@ -685,20 +692,21 @@ func (me *JSONElement) AsArray() []*JSONElement {
 		return []*JSONElement{}
 	}
 
-	var typedObj []interface{}
+	var refArr *[]interface{}
 
 	switch v := me.raw.(type) {
 	case []interface{}:
-		typedObj = v
+		refArr = &v
 	case *[]interface{}:
-		typedObj = *v
+		refArr = v
 	default:
 		me.Warn("AsArray: Cast: %T", me.raw)
 		return []*JSONElement{}
 	}
 
-	arr := make([]*JSONElement, len(typedObj))
-	for i, v := range typedObj {
+	arr := make([]*JSONElement, len(*refArr))
+
+	for i, v := range *refArr {
 		arr[i] = me.child(v)
 	}
 
