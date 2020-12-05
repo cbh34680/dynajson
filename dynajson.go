@@ -120,24 +120,24 @@ func NewByString(data string) (*JSONElement, error) {
 }
 
 // NewByPath ... func
-func NewByPath(path string) (*JSONElement, error) {
+func NewByPath(argPath string) (*JSONElement, error) {
 
 	var data []byte
 
-	if strings.HasPrefix(path, "http://") || strings.HasPrefix(path, "https://") {
+	if strings.HasPrefix(argPath, "http://") || strings.HasPrefix(argPath, "https://") {
 
 		// https://golang.hateblo.jp/entry/golang-http-request
 		// https://qiita.com/ono_matope/items/60e96c01b43c64ed1d18
 		// https://qiita.com/stk0724/items/dc400dccd29a4b3d6471
 
-		req, err := http.NewRequest(http.MethodGet, path, nil)
+		req, err := http.NewRequest(http.MethodGet, argPath, nil)
 		if err != nil {
-			return nil, fmt.Errorf("http.NewRequest: %s: %w", path, err)
+			return nil, fmt.Errorf("http.NewRequest: %s: %w", argPath, err)
 		}
 
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
-			return nil, fmt.Errorf("http.DefaultClient.Do: %s: %w", path, err)
+			return nil, fmt.Errorf("http.DefaultClient.Do: %s: %w", argPath, err)
 		}
 		defer func() {
 			io.Copy(ioutil.Discard, resp.Body)
@@ -145,20 +145,20 @@ func NewByPath(path string) (*JSONElement, error) {
 		}()
 
 		if resp.StatusCode != http.StatusOK {
-			return nil, fmt.Errorf("StatusCode != 200: %s: %d", path, resp.StatusCode)
+			return nil, fmt.Errorf("StatusCode != 200: %s: %d", argPath, resp.StatusCode)
 		}
 
 		bytes, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			return nil, fmt.Errorf("ReadAll: %s: %w", path, err)
+			return nil, fmt.Errorf("ReadAll: %s: %w", argPath, err)
 		}
 
 		data = bytes
 	} else {
 
-		bytes, err := ioutil.ReadFile(path)
+		bytes, err := ioutil.ReadFile(argPath)
 		if err != nil {
-			return nil, fmt.Errorf("ReadFile: %s: %w", path, err)
+			return nil, fmt.Errorf("ReadFile: %s: %w", argPath, err)
 		}
 
 		data = bytes

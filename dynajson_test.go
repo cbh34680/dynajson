@@ -108,8 +108,8 @@ func TestRead1(t *testing.T) {
 }
 
 func currentDir() (dir string) {
-	_, path, _, _ := runtime.Caller(1)
-	dir = filepath.Dir(path)
+	_, fullPath, _, _ := runtime.Caller(1)
+	dir = filepath.Dir(fullPath)
 	return
 }
 
