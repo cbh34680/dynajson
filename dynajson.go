@@ -12,6 +12,21 @@ import (
 	"strings"
 )
 
+func escapeJSONString(arg string) string {
+
+	bb := bytes.Buffer{}
+	for _, r := range arg {
+
+		switch r {
+		case 34, 92: // ["] [\]
+			bb.WriteRune(92)
+		}
+		bb.WriteRune(r)
+	}
+
+	return bb.String()
+}
+
 // Dump ...https://pod.hatenablog.com/entry/2016/05/15/232710
 func Dump(d *interface{}, buf *bytes.Buffer) {
 	switch v := (*d).(type) {
@@ -34,7 +49,10 @@ func Dump(d *interface{}, buf *bytes.Buffer) {
 	case map[string]interface{}:
 		buf.WriteString("{")
 		for k, sub := range v {
-			buf.WriteString(fmt.Sprintf(`"%s"`, k))
+			// * add escape -->
+			//buf.WriteString(fmt.Sprintf(`"%s"`, k))
+			buf.WriteString(fmt.Sprintf(`"%s"`, escapeJSONString(k)))
+			// * add escape <--
 			buf.WriteString(": ")
 			Dump(&sub, buf)
 			buf.WriteString(", ")
@@ -45,18 +63,9 @@ func Dump(d *interface{}, buf *bytes.Buffer) {
 		buf.WriteString("}")
 	case string:
 		// * add escape -->
-		bb := bytes.Buffer{}
-		for _, r := range v {
-
-			switch r {
-			case 34, 92: // ["] [\]
-				bb.WriteRune(92)
-			}
-			bb.WriteRune(r)
-		}
-		v = bb.String()
+		//buf.WriteString(fmt.Sprintf(`"%s"`, v))
+		buf.WriteString(fmt.Sprintf(`"%s"`, escapeJSONString(v)))
 		// * add escape <--
-		buf.WriteString(fmt.Sprintf(`"%s"`, v))
 	default:
 		buf.WriteString(fmt.Sprintf("%v", v))
 	}
@@ -221,8 +230,22 @@ func (me *JSONElement) Raw() interface{} {
 
 // IsNil ... func
 func (me *JSONElement) IsNil() bool {
-
 	return me.Raw() == nil
+}
+
+// IsMap ... func
+func (me *JSONElement) IsMap() bool {
+	_, ok := me.Raw().(map[string]interface{})
+	return ok
+}
+
+// IsArray ... func
+func (me *JSONElement) IsArray() bool {
+	switch me.Raw().(type) {
+	case []interface{}, *[]interface{}:
+		return true
+	}
+	return false
 }
 
 // ---------------------------------------------------------------------------

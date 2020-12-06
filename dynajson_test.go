@@ -18,6 +18,28 @@ func TestAll(t *testing.T) {
 	TestRead2(t)
 	TestReadonly1(t)
 	TestReadonly2(t)
+	TestEscape(t)
+}
+
+func TestEscape(t *testing.T) {
+
+	assert := assert.New(t)
+
+	root := NewAsMap()
+	assert.NotNil(root)
+
+	root.Put(`["]`, `[\]`)
+	arr, err := root.PutEmptyArray("arr")
+	assert.Nil(err)
+
+	arr.Append(`["]`)
+
+	fmt.Println(root)
+
+	assert.True(root.IsMap())
+	assert.False(root.Select("arr").IsMap())
+	assert.False(root.IsArray())
+	assert.True(root.Select("arr").IsArray())
 }
 
 func TestWrite1(t *testing.T) {
