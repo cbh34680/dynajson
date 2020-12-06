@@ -654,7 +654,7 @@ func (me *JSONElement) EachArray(callback func(int, *JSONElement)) {
 
 type walkCallbackType func([]interface{}, interface{}, interface{}) (bool, error)
 
-func walk(argParents []interface{}, argVal interface{}, callback walkCallbackType) error {
+func walk(argParents []interface{}, argVal interface{}, callback walkCallbackType) (bool, error) {
 
 	var refArr *[]interface{}
 	var objMap map[string]interface{}
@@ -673,16 +673,20 @@ func walk(argParents []interface{}, argVal interface{}, callback walkCallbackTyp
 		for k, v := range *refArr {
 			cont, err := callback(argParents, k, v)
 			if err != nil {
-				return fmt.Errorf("%v: callback: %w", k, err)
+				return false, fmt.Errorf("%v: callback: %w", k, err)
 			}
 
 			if !cont {
-				break
+				return false, nil
 			}
 
-			err = walk(append(argParents, k), v, callback)
+			cont, err = walk(append(argParents, k), v, callback)
 			if err != nil {
-				return fmt.Errorf("%v: walk: %w", k, err)
+				return false, fmt.Errorf("%v: walk: %w", k, err)
+			}
+
+			if !cont {
+				return false, nil
 			}
 		}
 	}
@@ -691,27 +695,33 @@ func walk(argParents []interface{}, argVal interface{}, callback walkCallbackTyp
 		for k, v := range objMap {
 			cont, err := callback(argParents, k, v)
 			if err != nil {
-				return fmt.Errorf("%v: callback: %w", k, err)
+				return false, fmt.Errorf("%v: callback: %w", k, err)
 			}
 
 			if !cont {
-				break
+				return false, nil
 			}
 
-			err = walk(append(argParents, k), v, callback)
+			cont, err = walk(append(argParents, k), v, callback)
 			if err != nil {
-				return fmt.Errorf("%v: walk: %w", k, err)
+				return false, fmt.Errorf("%v: walk: %w", k, err)
+			}
+
+			if !cont {
+				return false, nil
 			}
 		}
 	}
 
-	return nil
+	return true, nil
 }
 
 // Walk ... func
 func (me *JSONElement) Walk(callback walkCallbackType) error {
 
-	return walk([]interface{}{}, me.raw, callback)
+	_, err := walk([]interface{}{}, me.raw, callback)
+
+	return err
 }
 
 // ---------------------------------------------------------------------------
