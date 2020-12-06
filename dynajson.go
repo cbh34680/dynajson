@@ -652,7 +652,7 @@ func (me *JSONElement) EachArray(callback func(int, *JSONElement)) {
 	}
 }
 
-type walkCallbackType func([]interface{}, interface{}, interface{}) error
+type walkCallbackType func([]interface{}, interface{}, interface{}) (bool, error)
 
 func walk(argParents []interface{}, argVal interface{}, callback walkCallbackType) error {
 
@@ -671,9 +671,13 @@ func walk(argParents []interface{}, argVal interface{}, callback walkCallbackTyp
 	if refArr != nil {
 
 		for k, v := range *refArr {
-			err := callback(argParents, k, v)
+			cont, err := callback(argParents, k, v)
 			if err != nil {
 				return fmt.Errorf("%v: callback: %w", k, err)
+			}
+
+			if !cont {
+				break
 			}
 
 			err = walk(append(argParents, k), v, callback)
@@ -685,9 +689,13 @@ func walk(argParents []interface{}, argVal interface{}, callback walkCallbackTyp
 
 	if objMap != nil {
 		for k, v := range objMap {
-			err := callback(argParents, k, v)
+			cont, err := callback(argParents, k, v)
 			if err != nil {
 				return fmt.Errorf("%v: callback: %w", k, err)
+			}
+
+			if !cont {
+				break
 			}
 
 			err = walk(append(argParents, k), v, callback)

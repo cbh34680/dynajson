@@ -235,17 +235,17 @@ func TestReadonly2(t *testing.T) {
 
 	cnt := 0
 
-	err = root.Walk(func(parents []interface{}, key, val interface{}) error {
+	err = root.Walk(func(parents []interface{}, key, val interface{}) (bool, error) {
 
 		if cnt > 3 {
-			return fmt.Errorf("count > 3")
+			return false, fmt.Errorf("count > 3")
 		}
 
 		fmt.Printf("%v %v %v\n", parents, key, val)
 
 		cnt++
 
-		return nil
+		return true, nil
 	})
 
 	if err != nil {
