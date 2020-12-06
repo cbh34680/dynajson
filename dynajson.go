@@ -508,13 +508,16 @@ func (me *JSONElement) Select(key1 interface{}, keys ...interface{}) *JSONElemen
 	}
 
 	if anyArr, ok := key1.([]interface{}); ok {
+		keysLen := len(keys)
 
-		if len(anyArr)+len(keys) == 0 {
+		if len(anyArr)+keysLen == 0 {
 			me.Warn("Select: No key")
 			return me.child(nil)
 		}
 
-		anyArr = append(anyArr, keys...)
+		if keysLen > 0 {
+			anyArr = append(anyArr, keys...)
+		}
 
 		key1 = anyArr[0]
 		keys = anyArr[1:]
