@@ -77,8 +77,9 @@ func TestWrite1(t *testing.T) {
 	m2.Put("m2i1", 201)
 
 	sum := 0
-	root.Select("m1").Select("m1a1").EachArray(func(i int, elm *JSONElement) {
+	root.Select("m1").Select("m1a1").EachArray(func(i int, elm *JSONElement) (bool, error) {
 		sum++
+		return true, nil
 	})
 
 	assert.Equal(4, root.Count())
@@ -110,16 +111,18 @@ func TestRead1(t *testing.T) {
 	tags := root.Select("tags")
 
 	sum := 0
-	root.Select("schemes").EachArray(func(i int, val *JSONElement) {
+	root.Select("schemes").EachArray(func(i int, val *JSONElement) (bool, error) {
 		sum++
+		return true, nil
 	})
 
 	schemes := root.Select("schemes").AsArray()
 	definitions := root.Select("definitions")
 
 	keys1 := []string{}
-	definitions.Select("ApiResponse").Select("properties").EachMap(func(key string, val *JSONElement) {
+	definitions.Select("ApiResponse").Select("properties").EachMap(func(key string, val *JSONElement) (bool, error) {
 		keys1 = append(keys1, key)
+		return true, nil
 	})
 
 	properties := root.Select("definitions").Select("ApiResponse").Select("properties")

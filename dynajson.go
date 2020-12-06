@@ -593,22 +593,20 @@ func (me *JSONElement) Keys() []string {
 }
 
 // EachMap ... func
-func (me *JSONElement) EachMap(callback func(string, *JSONElement)) {
+func (me *JSONElement) EachMap(callback func(string, *JSONElement) (bool, error)) error {
 
 	if me.IsNil() {
-		me.Warn("EachMap: Null Object")
-		return
+		return fmt.Errorf("EachMap: Null Object")
 	}
 
 	typedObj, ok := me.raw.(map[string]interface{})
 	if !ok {
-		me.Warn("EachMap: Cast: %T", me.raw)
-		return
+		return fmt.Errorf("EachMap: Cast: %T", me.raw)
 	}
 
 	containerLen := len(typedObj)
 	if containerLen == 0 {
-		return
+		return nil
 	}
 
 	keys := make([]string, containerLen)
@@ -623,16 +621,24 @@ func (me *JSONElement) EachMap(callback func(string, *JSONElement)) {
 	sort.Strings(keys)
 
 	for _, k := range keys {
-		callback(k, me.child(typedObj[k]))
+		cont, err := callback(k, me.child(typedObj[k]))
+		if err != nil {
+			return fmt.Errorf("callback: %w", err)
+		}
+
+		if !cont {
+			break
+		}
 	}
+
+	return nil
 }
 
 // EachArray ... func
-func (me *JSONElement) EachArray(callback func(int, *JSONElement)) {
+func (me *JSONElement) EachArray(callback func(int, *JSONElement) (bool, error)) error {
 
 	if me.IsNil() {
-		me.Warn("EachArray: Null Object")
-		return
+		return fmt.Errorf("EachArray: Null Object")
 	}
 
 	var refArr *[]interface{}
@@ -643,13 +649,22 @@ func (me *JSONElement) EachArray(callback func(int, *JSONElement)) {
 	case *[]interface{}:
 		refArr = v
 	default:
-		me.Warn("EachArray: Cast: %T", me.raw)
-		return
+		return fmt.Errorf("EachArray: Cast: %T", me.raw)
 	}
 
 	for i, v := range *refArr {
-		callback(i, me.child(v))
+		cont, err := callback(i, me.child(v))
+
+		if err != nil {
+			return fmt.Errorf("callback: %w", err)
+		}
+
+		if !cont {
+			break
+		}
 	}
+
+	return nil
 }
 
 type walkCallbackType func([]interface{}, interface{}, interface{}) (bool, error)
