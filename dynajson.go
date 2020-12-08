@@ -250,6 +250,23 @@ func (me *JSONElement) IsArray() bool {
 
 // ---------------------------------------------------------------------------
 
+func elm2Raw(arg interface{}) interface{} {
+
+	if elm, ok := arg.(*JSONElement); ok {
+		return elm2Raw(elm.Raw())
+	}
+
+	return arg
+}
+
+func updateElms2Raws(arg []interface{}) {
+
+	for i, v := range arg {
+
+		arg[i] = elm2Raw(v)
+	}
+}
+
 // Put ... func
 func (me *JSONElement) Put(key string, val1 interface{}, vals ...interface{}) error {
 
@@ -269,14 +286,42 @@ func (me *JSONElement) Put(key string, val1 interface{}, vals ...interface{}) er
 	switch len(vals) {
 	case 0:
 		// 一つの時は "key": val
-		typedObj[key] = val1
+		typedObj[key] = elm2Raw(val1)
 	default:
 		// 複数の時は "key": [val, val, ...]
-		refArr := &[]interface{}{val1}
-		*refArr = append(*refArr, vals...)
+		arr := []interface{}{val1}
+		arr = append(arr, vals...)
+		updateElms2Raws(arr)
 
-		typedObj[key] = refArr
+		typedObj[key] = &arr
 	}
+
+	return nil
+}
+
+// Append ... func
+func (me *JSONElement) Append(val1 interface{}, vals ...interface{}) error {
+
+	if me.IsNil() {
+		return me.Errorf("me.raw is null")
+	}
+
+	if me.Readonly {
+		return me.Errorf("me.Readonly is true")
+	}
+
+	refArr, ok := me.raw.(*[]interface{})
+	if !ok {
+		return me.Errorf("Not Editable-Array Type: %T", me.raw)
+	}
+
+	(*refArr) = append((*refArr), val1)
+
+	if len(vals) != 0 {
+		(*refArr) = append((*refArr), vals...)
+	}
+
+	updateElms2Raws(*refArr)
 
 	return nil
 }
@@ -317,31 +362,6 @@ func (me *JSONElement) PutEmptyArray(key string) (*JSONElement, error) {
 	}
 
 	return me.SelectByKey(key), nil
-}
-
-// Append ... func
-func (me *JSONElement) Append(val1 interface{}, vals ...interface{}) error {
-
-	if me.IsNil() {
-		return me.Errorf("me.raw is null")
-	}
-
-	if me.Readonly {
-		return me.Errorf("me.Readonly is true")
-	}
-
-	refArr, ok := me.raw.(*[]interface{})
-	if !ok {
-		return me.Errorf("Not Editable-Array Type: %T", me.raw)
-	}
-
-	(*refArr) = append((*refArr), val1)
-
-	if len(vals) != 0 {
-		(*refArr) = append((*refArr), vals...)
-	}
-
-	return nil
 }
 
 // DeleteByKey ... func

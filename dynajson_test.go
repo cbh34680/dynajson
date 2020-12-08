@@ -13,12 +13,40 @@ import (
 )
 
 func TestAll(t *testing.T) {
+	TestPut(t)
 	TestWrite1(t)
 	TestRead1(t)
 	TestRead2(t)
 	TestReadonly1(t)
 	TestReadonly2(t)
 	TestEscape(t)
+}
+
+func TestPut(t *testing.T) {
+
+	assert := assert.New(t)
+
+	root := NewAsMap()
+	assert.NotNil(root)
+
+	root.Put("str", "hello world")
+
+	str := root.Select("str")
+
+	root.Put("put", str)
+	fmt.Println(root)
+	root.Put("put", str, str)
+	fmt.Println(root)
+
+	arr, _ := root.PutEmptyArray("append")
+	fmt.Println(root)
+
+	arr.Append(str)
+	fmt.Println(root)
+	arr.Append(str, str)
+	fmt.Println(root)
+
+	fmt.Println("done.")
 }
 
 func TestEscape(t *testing.T) {
