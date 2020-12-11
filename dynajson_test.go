@@ -13,7 +13,7 @@ import (
 )
 
 func TestAll(t *testing.T) {
-	// 1
+	// 3
 	TestPut(t)
 	TestWrite1(t)
 	TestRead1(t)
