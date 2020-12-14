@@ -73,10 +73,12 @@ func Dump(d *interface{}, buf *bytes.Buffer) {
 
 // JSONElement ... struct
 type JSONElement struct {
+	parent       *JSONElement
+	key          interface{}
 	raw          interface{}
 	WarnHandler  func(*JSONElement, string, string, int)
 	FatalHandler func(*JSONElement, string, string, int)
-	Level        int
+	level        int
 	Readonly     bool
 }
 
@@ -442,12 +444,14 @@ func (me *JSONElement) Delete(arg interface{}) error {
 
 // ---------------------------------------------------------------------------
 
-func (me *JSONElement) child(raw interface{}) *JSONElement {
+func (me *JSONElement) child(key, raw interface{}) *JSONElement {
 
 	return &JSONElement{
+		parent:      me,
+		key:         key,
 		raw:         raw,
 		WarnHandler: me.WarnHandler,
-		Level:       me.Level + 1,
+		level:       me.level + 1,
 		Readonly:    me.Readonly,
 	}
 }
@@ -489,16 +493,16 @@ func (me *JSONElement) SelectByKey(key string) *JSONElement {
 
 	if me.IsNil() {
 		me.Warn("key=[%s]: SelectByKey: Null Object", key)
-		return me.child(nil)
+		return me.child(key, nil)
 	}
 
 	typedObj, ok := me.raw.(map[string]interface{})
 	if !ok {
 		me.Warn("key=[%s]: SelectByKey: Cast: %T", key, me.raw)
-		return me.child(nil)
+		return me.child(key, nil)
 	}
 
-	return me.child(typedObj[key])
+	return me.child(key, typedObj[key])
 }
 
 // SelectByPos ... func
@@ -506,7 +510,7 @@ func (me *JSONElement) SelectByPos(pos int) *JSONElement {
 
 	if me.IsNil() {
 		me.Warn("pos=[%d]: SelectByPos: Null Object", pos)
-		return me.child(nil)
+		return me.child(pos, nil)
 	}
 
 	var refArr *[]interface{}
@@ -518,7 +522,7 @@ func (me *JSONElement) SelectByPos(pos int) *JSONElement {
 		refArr = v
 	default:
 		me.Warn("pos=[%d]: SelectByPos: Not Array: %T", pos, me.raw)
-		return me.child(nil)
+		return me.child(pos, nil)
 	}
 
 	containerLen := len(*refArr)
@@ -526,10 +530,10 @@ func (me *JSONElement) SelectByPos(pos int) *JSONElement {
 	if pos >= containerLen {
 		me.Warn("pos=[%d]: SelectByPos: Overflow: %d", pos, containerLen)
 
-		return me.child(nil)
+		return me.child(pos, nil)
 	}
 
-	return me.child((*refArr)[pos])
+	return me.child(pos, (*refArr)[pos])
 }
 
 // Select ... func
@@ -537,7 +541,7 @@ func (me *JSONElement) Select(key1 interface{}, keys ...interface{}) *JSONElemen
 
 	if me.IsNil() {
 		me.Warn("Select: Null Object")
-		return me.child(nil)
+		return me.child(key1, nil)
 	}
 
 	if strArr, ok := key1.([]string); ok {
@@ -555,7 +559,7 @@ func (me *JSONElement) Select(key1 interface{}, keys ...interface{}) *JSONElemen
 
 		if len(anyArr)+keysLen == 0 {
 			me.Warn("Select: No key")
-			return me.child(nil)
+			return me.child(key1, nil)
 		}
 
 		if keysLen > 0 {
@@ -575,7 +579,7 @@ func (me *JSONElement) Select(key1 interface{}, keys ...interface{}) *JSONElemen
 		next = me.SelectByKey(x)
 	default:
 		me.Warn("Select(%v): Cast: %[1]T", key1)
-		return me.child(nil)
+		return me.child(key1, nil)
 	}
 
 	if len(keys) == 0 {
@@ -641,7 +645,7 @@ func (me *JSONElement) EachMap(callback func(string, *JSONElement) (bool, error)
 	sort.Strings(keys)
 
 	for _, k := range keys {
-		cont, err := callback(k, me.child(typedObj[k]))
+		cont, err := callback(k, me.child(k, typedObj[k]))
 		if err != nil {
 			return fmt.Errorf("callback: %w", err)
 		}
@@ -673,7 +677,7 @@ func (me *JSONElement) EachArray(callback func(int, *JSONElement) (bool, error))
 	}
 
 	for i, v := range *refArr {
-		cont, err := callback(i, me.child(v))
+		cont, err := callback(i, me.child(i, v))
 
 		if err != nil {
 			return fmt.Errorf("callback: %w", err)
@@ -759,6 +763,36 @@ func (me *JSONElement) Walk(callback walkCallbackType) error {
 	return err
 }
 
+// FullPath ... func
+func (me *JSONElement) FullPath() []interface{} {
+
+	if me.level == 0 {
+		return []interface{}{}
+	}
+
+	fullPath := make([]interface{}, me.level)
+
+	elm := me
+	for i := me.level - 1; i >= 0; i-- {
+		fullPath[i] = elm.key
+		elm = elm.parent
+	}
+
+	return fullPath
+}
+
+// FullPath2Str ... func
+func FullPath2Str(fullPath []interface{}, sep string) string {
+
+	ret := ""
+
+	for _, v := range fullPath {
+		ret = fmt.Sprintf("%s%s%v", ret, sep, v)
+	}
+
+	return ret
+}
+
 // ---------------------------------------------------------------------------
 
 // AsArray ... func
@@ -784,7 +818,7 @@ func (me *JSONElement) AsArray() []*JSONElement {
 	arr := make([]*JSONElement, len(*refArr))
 
 	for i, v := range *refArr {
-		arr[i] = me.child(v)
+		arr[i] = me.child(i, v)
 	}
 
 	return arr
